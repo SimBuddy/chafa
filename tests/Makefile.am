@@ -16,6 +16,7 @@ LOG_DRIVER = $(top_srcdir)/tests/test-driver.sh
 ## --- Backend tests ---
 
 check_PROGRAMS = \
+	base64-test \
 	byte-fifo-test \
 	canvas-test \
 	color-hash-test \
@@ -24,6 +25,9 @@ check_PROGRAMS = \
 	palette-test \
 	stream-reader-test \
 	term-info-test
+
+base64_test_SOURCES = \
+	base64-test.c
 
 byte_fifo_test_SOURCES = \
 	byte-fifo-test.c
@@ -68,6 +72,7 @@ TOOL_CHECKS =
 endif
 
 TESTS = \
+	base64-test \
 	byte-fifo-test \
 	canvas-test \
 	color-hash-test \

@@ -44,12 +44,12 @@ chafa_base64_deinit (ChafaBase64 *base64)
 }
 
 static void
-encode_3_bytes (GString *gs_out, guint32 bytes)
+encode_3_bytes (gchar *destination, guint32 bytes)
 {
-    g_string_append_c (gs_out, base64_dict [(bytes >> (3 * 6)) & 0x3f]);
-    g_string_append_c (gs_out, base64_dict [(bytes >> (2 * 6)) & 0x3f]);
-    g_string_append_c (gs_out, base64_dict [(bytes >> (1 * 6)) & 0x3f]);
-    g_string_append_c (gs_out, base64_dict [bytes & 0x3f]);
+    destination [0] = base64_dict [(bytes >> (3 * 6)) & 0x3f];
+    destination [1] = base64_dict [(bytes >> (2 * 6)) & 0x3f];
+    destination [2] = base64_dict [(bytes >> (1 * 6)) & 0x3f];
+    destination [3] = base64_dict [bytes & 0x3f];
 }
 
 void
@@ -58,6 +58,8 @@ chafa_base64_encode (ChafaBase64 *base64, GString *gs_out, gconstpointer in, gsi
     const guint8 *in_u8 = in;
     const guint8 *end_u8 = in_u8 + in_len;
     guint32 r;
+    gchar output [1024];
+    gsize used = 0;
 
     if (base64->buf_len + in_len < 3)
     {
@@ -70,13 +72,15 @@ chafa_base64_encode (ChafaBase64 *base64, GString *gs_out, gconstpointer in, gsi
     {
         r = (base64->buf [0] << 16) | (in_u8 [0] << 8) | in_u8 [1];
         in_u8 += 2;
-        encode_3_bytes (gs_out, r);
+        encode_3_bytes (output, r);
+        used = 4;
     }
     else if (base64->buf_len == 2)
     {
         r = (base64->buf [0] << 16) | (base64->buf [1] << 8) | in_u8 [0];
         in_u8++;
-        encode_3_bytes (gs_out, r);
+        encode_3_bytes (output, r);
+        used = 4;
     }
 
     base64->buf_len = 0;
@@ -84,8 +88,19 @@ chafa_base64_encode (ChafaBase64 *base64, GString *gs_out, gconstpointer in, gsi
     while (end_u8 - in_u8 >= 3)
     {
         r = (in_u8 [0] << 16) | (in_u8 [1] << 8) | in_u8 [2];
-        encode_3_bytes (gs_out, r);
+        encode_3_bytes (output + used, r);
         in_u8 += 3;
+        used += 4;
+        if (used == sizeof (output))
+        {
+            g_string_append_len (gs_out, output, used);
+            used = 0;
+        }
+    }
+
+    if (used > 0)
+    {
+        g_string_append_len (gs_out, output, used);
     }
 
     while (end_u8 - in_u8 > 0)
